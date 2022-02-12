@@ -13,6 +13,6 @@ namespace JsonTypeDefinition
         /// Used only by root schema (see https://datatracker.ietf.org/doc/html/rfc8927#section-2.1).
         /// Schemas contained by the root schema can reference these definitions. In practice properties that reference complex .NET types will be added to the definition collection.
         /// </summary>
-        public IEnumerable<JsonTypeDefinitionSchema>? Definitions { get; set; }
+        public IDictionary<string, JsonTypeDefinitionSchema>? Definitions { get; set; }
     }
 }

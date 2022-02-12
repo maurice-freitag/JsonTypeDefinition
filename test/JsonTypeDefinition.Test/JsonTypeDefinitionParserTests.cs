@@ -20,6 +20,13 @@ namespace JsonTypeDefinition.Test
             Assert.Null(ex?.Message);
         }
 
+        [Fact]
+        [Trait("Category", "Parse")]
+        public void NullParameter_Throws()
+        {
+            Assert.Throws<JsonTypeDefinitionParserException>(() => JsonTypeDefinitionParser.Parse(null));
+        }
+
         private class EmptySchemaType { }
 
         [Fact]
@@ -135,15 +142,15 @@ namespace JsonTypeDefinition.Test
             CheckForRFC8927Compliancy(schema);
         }
 
-        private class RootType<TContainedType> { public TContainedType? ContainedType { get; set; } }
+        private class RootType { public RefSchemaType ContainedType { get; set; } }
 
-        private class RefSchemaType { public string? InnerProperty { get; set; } }
+        private class RefSchemaType { public string InnerProperty { get; set; } }
 
         [Fact]
         [Trait("Category", "Parse")]
         public void RefSchema_ParseType()
         {
-            var schema = JsonTypeDefinitionParser.Parse(typeof(RootType<RefSchemaType>));
+            var schema = JsonTypeDefinitionParser.Parse(typeof(RootType));
             AssertRefSchema(schema);
         }
 
@@ -151,7 +158,7 @@ namespace JsonTypeDefinition.Test
         [Trait("Category", "Parse")]
         public void RefSchema_ParseT()
         {
-            var schema = JsonTypeDefinitionParser.Parse<RootType<RefSchemaType>>();
+            var schema = JsonTypeDefinitionParser.Parse<RootType>();
             AssertRefSchema(schema);
         }
 
@@ -159,7 +166,7 @@ namespace JsonTypeDefinition.Test
         [Trait("Category", "RFC Compliance")]
         public void RefSchema_RFC8927Compliant()
         {
-            var schema = JsonTypeDefinitionParser.Parse(typeof(RootType<RefSchemaType>));
+            var schema = JsonTypeDefinitionParser.Parse(typeof(RootType));
             CheckForRFC8927Compliancy(schema);
         }
 
@@ -175,7 +182,7 @@ namespace JsonTypeDefinition.Test
             Assert.NotNull(schema.OptionalProperties);
 
             var schemaProperty = Assert.Single(schema.OptionalProperties);
-            Assert.Equal(nameof(RootType<RefSchemaType>.ContainedType), schemaProperty.Key);
+            Assert.Equal(nameof(RootType.ContainedType), schemaProperty.Key);
             Assert.Null(schemaProperty.Value.Type);
             Assert.Null(schemaProperty.Value.Values);
             Assert.Null(schemaProperty.Value.Enum);
@@ -186,15 +193,16 @@ namespace JsonTypeDefinition.Test
             Assert.Equal(nameof(RefSchemaType), schemaProperty.Value.Ref);
 
             var definitionSchema = Assert.Single(schema.Definitions);
-            Assert.Null(definitionSchema.Type);
-            Assert.Null(definitionSchema.Values);
-            Assert.Null(definitionSchema.Enum);
-            Assert.Null(definitionSchema.Ref);
-            Assert.Null(definitionSchema.Elements);
-            Assert.Null(definitionSchema.Properties);
-            Assert.NotNull(definitionSchema.OptionalProperties);
+            Assert.Equal(nameof(RootType.ContainedType), definitionSchema.Key);
+            Assert.Null(definitionSchema.Value.Type);
+            Assert.Null(definitionSchema.Value.Values);
+            Assert.Null(definitionSchema.Value.Enum);
+            Assert.Null(definitionSchema.Value.Ref);
+            Assert.Null(definitionSchema.Value.Elements);
+            Assert.Null(definitionSchema.Value.Properties);
+            Assert.NotNull(definitionSchema.Value.OptionalProperties);
 
-            var definitionSchemaProperty = Assert.Single(definitionSchema.OptionalProperties);
+            var definitionSchemaProperty = Assert.Single(definitionSchema.Value.OptionalProperties);
             Assert.Equal(nameof(RefSchemaType.InnerProperty), definitionSchemaProperty.Key);
             Assert.Null(definitionSchemaProperty.Value.Values);
             Assert.Null(definitionSchemaProperty.Value.Enum);
@@ -246,7 +254,7 @@ namespace JsonTypeDefinition.Test
             Assert.Contains("C", schema.Enum);
         }
 
-        public class PropertySchemaType {[Required] public string? RequiredProperty { get; set; } }
+        public class PropertySchemaType {[Required] public string RequiredProperty { get; set; } }
 
         [Fact]
         [Trait("Category", "Parse")]
@@ -288,7 +296,7 @@ namespace JsonTypeDefinition.Test
             Assert.Equal(expectedType, property.Type);
         }
 
-        public class OptionalPropertySchemaType { public string? OptionalProperty { get; set; } }
+        public class OptionalPropertySchemaType { public string OptionalProperty { get; set; } }
 
         [Fact]
         [Trait("Category", "Parse")]
@@ -411,6 +419,7 @@ namespace JsonTypeDefinition.Test
         [Theory]
         [Trait("Category", "RFC Compliance")]
         [InlineData(typeof(IDictionary<string, string>))]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S4144:Methods should not have identical implementations", Justification = "<Pending>")]
         public void ValuesSchema_RFC8927Compliant(Type src)
         {
             var schema = JsonTypeDefinitionParser.Parse(src);
