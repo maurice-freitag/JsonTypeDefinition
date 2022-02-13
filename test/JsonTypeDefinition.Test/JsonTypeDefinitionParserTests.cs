@@ -464,8 +464,8 @@ namespace JsonTypeDefinition.Test
         public void IgnoresStaticProperties()
         {
             var schema = JsonTypeDefinitionParser.Parse<StaticPropertyType>();
-            Assert.Empty(schema.Properties);
-            Assert.Empty(schema.OptionalProperties);
+            Assert.Null(schema.Properties);
+            Assert.Null(schema.OptionalProperties);
         }
 
         public class OnlyRequiredPropertyType {[Required] public string Foo { get; set; } }
@@ -476,7 +476,7 @@ namespace JsonTypeDefinition.Test
         {
             var schema = JsonTypeDefinitionParser.Parse<OnlyRequiredPropertyType>();
             Assert.Single(schema.Properties);
-            Assert.Empty(schema.OptionalProperties);
+            Assert.Null(schema.OptionalProperties);
         }
 
         public class OnlyOptionalPropertyType { public string Foo { get; set; } }
@@ -485,8 +485,8 @@ namespace JsonTypeDefinition.Test
         [Trait("Category", "Parse")]
         public void WithoutRequiredAttribute_OptionalProperty()
         {
-            var schema = JsonTypeDefinitionParser.Parse<OnlyRequiredPropertyType>();
-            Assert.Empty(schema.Properties);
+            var schema = JsonTypeDefinitionParser.Parse<OnlyOptionalPropertyType>();
+            Assert.Null(schema.Properties);
             Assert.Single(schema.OptionalProperties);
         }
     }
