@@ -64,7 +64,20 @@ The parser would produce the following Json Type Definition:
 }
 ```
 
-Do note that `JsonTypeDefinitionParser.Parse` returns a record of type `RootSchema` and has no reference to `Newtonsoft.Json` or `System.Text.Json`. Feel free to use your favorite JSON serializer to get the appropriate JSON representation!
+Do note that `JsonTypeDefinitionParser.Parse` returns a record of type `RootSchema` and has no reference to `Newtonsoft.Json` or `System.Text.Json`. Feel free to use your favorite JSON serializer to get the appropriate JSON representation! Recommended serialization settings: 
+
+```cs
+// Newtonsoft.Json:
+var settings = new Newtonsoft.Json.JsonSerializerSettings()
+{
+    NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore,
+    Converters = new Newtonsoft.Json.JsonConverter[] { new Newtonsoft.Json.Converters.StringEnumConverter() }
+};
+
+// System.Text.Json:
+var options = new System.Text.Json.JsonSerializerOptions { IgnoreNullValues = true };
+options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+```
 
 </br>
 
