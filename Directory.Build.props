@@ -1,0 +1,11 @@
+<Project>
+    <PropertyGroup>    
+        <Authors>Maurice Freitag</Authors>
+        <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/maurice-freitag/jsontypedefinition</RepositoryUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageProjectUrl>https://github.com/maurice-freitag/jsontypedefinition</PackageProjectUrl>
+    </PropertyGroup>
+</Project>
