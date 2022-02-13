@@ -142,7 +142,7 @@ namespace JsonTypeDefinition.Test
             CheckForRFC8927Compliancy(schema);
         }
 
-        private class RootType { public RefSchemaType ContainedType { get; set; } }
+        private class RootType { public RefSchemaType ContainedType { get; set; } = default; }
 
         private class RefSchemaType { public string InnerProperty { get; set; } }
 
@@ -193,7 +193,7 @@ namespace JsonTypeDefinition.Test
             Assert.Equal(nameof(RefSchemaType), schemaProperty.Value.Ref);
 
             var definitionSchema = Assert.Single(schema.Definitions);
-            Assert.Equal(nameof(RootType.ContainedType), definitionSchema.Key);
+            Assert.Equal(nameof(RefSchemaType), definitionSchema.Key);
             Assert.Null(definitionSchema.Value.Type);
             Assert.Null(definitionSchema.Value.Values);
             Assert.Null(definitionSchema.Value.Enum);
@@ -252,6 +252,24 @@ namespace JsonTypeDefinition.Test
             Assert.Contains("A", schema.Enum);
             Assert.Contains("B", schema.Enum);
             Assert.Contains("C", schema.Enum);
+        }
+
+        public enum EnumWithoutValues { }
+
+        [Fact]
+        [Trait("Category", "Parse")]
+        public void EnumSchema_WithoutValues_Throws()
+        {
+            Assert.Throws<JsonTypeDefinitionParserException>(() => JsonTypeDefinitionParser.Parse<EnumWithoutValues>());
+        }
+
+        public enum EnumWithDuplicateValues { Foo, foo }
+
+        [Fact]
+        [Trait("Category", "Parse")]
+        public void EnumSchema_WithDuplicateValues_Throws()
+        {
+            Assert.Throws<JsonTypeDefinitionParserException>(() => JsonTypeDefinitionParser.Parse<EnumWithDuplicateValues>());
         }
 
         public class PropertySchemaType {[Required] public string RequiredProperty { get; set; } }
@@ -437,6 +455,39 @@ namespace JsonTypeDefinition.Test
             Assert.Null(schema.Elements);
             Assert.NotNull(schema.Values);
             Assert.Equal(expectedType, schema.Values?.Type);
+        }
+
+        public class StaticPropertyType { public static string Foo { get; set; } }
+
+        [Fact]
+        [Trait("Category", "Parse")]
+        public void IgnoresStaticProperties()
+        {
+            var schema = JsonTypeDefinitionParser.Parse<StaticPropertyType>();
+            Assert.Empty(schema.Properties);
+            Assert.Empty(schema.OptionalProperties);
+        }
+
+        public class OnlyRequiredPropertyType {[Required] public string Foo { get; set; } }
+
+        [Fact]
+        [Trait("Category", "Parse")]
+        public void WithRequiredAttribute_Property()
+        {
+            var schema = JsonTypeDefinitionParser.Parse<OnlyRequiredPropertyType>();
+            Assert.Single(schema.Properties);
+            Assert.Empty(schema.OptionalProperties);
+        }
+
+        public class OnlyOptionalPropertyType { public string Foo { get; set; } }
+
+        [Fact]
+        [Trait("Category", "Parse")]
+        public void WithoutRequiredAttribute_OptionalProperty()
+        {
+            var schema = JsonTypeDefinitionParser.Parse<OnlyRequiredPropertyType>();
+            Assert.Empty(schema.Properties);
+            Assert.Single(schema.OptionalProperties);
         }
     }
 }

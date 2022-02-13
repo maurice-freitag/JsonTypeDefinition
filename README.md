@@ -10,7 +10,7 @@ A common use-case would be a REST API describing the form in which payloads are 
 
 ## Installation 
 
-`dotnet package install JsonTypeDefinition`
+`dotnet add package JsonTypeDefinition`
 
 </br>
 
@@ -72,7 +72,7 @@ Do note that `JsonTypeDefinitionParser.Parse` returns a record of type `RootSche
 
 When defining the models it is important to design them around the limitations that come with a _portable_, _consumer agnostic_ type definition. 
 
-Some commonly used .NET types are currently not supported, including `System.TimeSpan`. Imagine what would happen if you were to create a JTD from a time span object. RFC 8927 does not define a fitting primitive type that could be used (`timestamp` is more akin to `System.DateTimeOffset`) as there is no universally agreed upon way to describe durations. 10 minutes could be described as `00:10:00`, `PM10` (RFC ... TODO), `3600` (in seconds), etc. There would be no way for consumers of the JTD to know which notation to use. Instead you're encouraged to work around these limitations for example by replacing 
+Some commonly used .NET types are currently not supported, including `System.TimeSpan`. Imagine what would happen if you were to create a JTD from a time span object. RFC 8927 does not define a fitting primitive type that could be used (`timestamp` is more akin to `System.DateTimeOffset`) as there is no universally agreed upon way to describe durations. 10 minutes could be described as `00:10:00`, `PT10M` (ISO 8601), `3600` (in seconds), etc. There would be no way for consumers of the JTD to know which notation to use. Instead you're encouraged to work around these limitations for example by replacing 
 ```cs
 public TimeSpan TimeToLive { get; set; }
 ```
@@ -84,7 +84,7 @@ so that any consumer nows exactly what format you expect.
 
 </br>
 
-## Improvements
+## Future improvements
 
 Contributions are welcome :)
 - [ ] custom handlers for handling otherwise unsupported types

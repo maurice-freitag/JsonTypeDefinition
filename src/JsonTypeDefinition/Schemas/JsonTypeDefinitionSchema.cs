@@ -51,7 +51,7 @@ namespace JsonTypeDefinition
 
         /// <summary>
         /// Used by values schemas (see https://datatracker.ietf.org/doc/html/rfc8927#section-2.2.7).
-        /// This schema is used specifically by <see cref="IDictionary{string, TValue}"/> where TValue is described by another <see cref="JsonTypeDefinitionSchema"/>.
+        /// This schema is used specifically by <see cref="IDictionary{TKey, TValue}"/> where TKey is string and TValue is described by another <see cref="JsonTypeDefinitionSchema"/>.
         /// </summary>
         public JsonTypeDefinitionSchema? Values { get; set; }
     }

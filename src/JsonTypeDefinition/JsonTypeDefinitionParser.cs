@@ -66,17 +66,17 @@ namespace JsonTypeDefinition
             };
         }
 
-        private static JsonTypeDefinitionSchema GetJsonTypeDefinitionSchemaByType(Type type, IDictionary<string, JsonTypeDefinitionSchema> definitions, bool isRoot)
+        private static JsonTypeDefinitionSchema GetJsonTypeDefinitionSchemaByType(Type? type, IDictionary<string, JsonTypeDefinitionSchema> definitions, bool isRoot)
         {
             if (type is null)
                 throw new JsonTypeDefinitionParserException(new ArgumentNullException(nameof(type)));
 
-            if (typeMapping.ContainsKey(Nullable.GetUnderlyingType(type) ?? type))
+            if (TreatAsTypeSchema(type))
                 return GetTypeSchema(type);
-            else if (typeof(IDictionary<,>).IsAssignableFrom(type) && type.GenericTypeArguments[0] == typeof(string))
-                return GetValuesSchema(type.GenericTypeArguments[1], definitions);
-            else if (typeof(IEnumerable<>).IsAssignableFrom(type))
-                return GetElementsSchema(type.GenericTypeArguments[0], definitions);
+            else if (TreatAsValuesSchema(type, out var dictType))
+                return GetValuesSchema(dictType, definitions);
+            else if (TreatAsElementsSchema(type, out var elementsType))
+                return GetElementsSchema(elementsType, definitions);
             else if (type.IsEnum)
                 return GetEnumSchema(type);
             else if (type.IsClass)
@@ -85,20 +85,51 @@ namespace JsonTypeDefinition
                 throw new JsonTypeDefinitionParserException($"Unsupported type '{type.FullName}'.");
         }
 
-        private static JsonTypeDefinitionSchema GetTypeSchema(Type type)
+        private static bool TreatAsTypeSchema(Type type)
         {
-            if (!typeMapping.TryGetValue(type, out var jsonType))
-                throw new JsonTypeDefinitionParserException($"Unable to map type '{type.FullName}' to any {nameof(JsonTypeDefinitionPrimitiveType)}.");
-
-            return new() { Type = jsonType };
+            return typeMapping.ContainsKey(Nullable.GetUnderlyingType(type) ?? type);
         }
 
-        private static JsonTypeDefinitionSchema GetValuesSchema(Type containedType, IDictionary<string, JsonTypeDefinitionSchema> definitions)
+        private static bool TreatAsElementsSchema(Type type, out Type? containedType)
+        {
+            if (type.IsArray)
+            {
+                containedType = type.GetElementType();
+                return true;
+            }
+            if (type.GenericTypeArguments.Length == 1 && typeof(IEnumerable<>).MakeGenericType(type.GenericTypeArguments[0]).IsAssignableFrom(type))
+            {
+                containedType = type.GenericTypeArguments[0];
+                return true;
+            }
+            containedType = null;
+            return false;
+        }
+
+        private static bool TreatAsValuesSchema(Type type, out Type? containedType)
+        {
+            if (type.GenericTypeArguments.Length == 2
+                && type.GenericTypeArguments[0] == typeof(string)
+                && typeof(IDictionary<,>).MakeGenericType(typeof(string), type.GenericTypeArguments[1]).IsAssignableFrom(type))
+            {
+                containedType = type.GenericTypeArguments[1];
+                return true;
+            }
+            containedType = null;
+            return false;
+        }
+
+        private static JsonTypeDefinitionSchema GetTypeSchema(Type type)
+        {
+            return new() { Type = typeMapping[type] };
+        }
+
+        private static JsonTypeDefinitionSchema GetValuesSchema(Type? containedType, IDictionary<string, JsonTypeDefinitionSchema> definitions)
         {
             return new() { Values = GetJsonTypeDefinitionSchemaByType(containedType, definitions, false) };
         }
 
-        private static JsonTypeDefinitionSchema GetElementsSchema(Type containedType, IDictionary<string, JsonTypeDefinitionSchema> definitions)
+        private static JsonTypeDefinitionSchema GetElementsSchema(Type? containedType, IDictionary<string, JsonTypeDefinitionSchema> definitions)
         {
             return new() { Elements = GetJsonTypeDefinitionSchemaByType(containedType, definitions, false) };
         }
@@ -118,29 +149,27 @@ namespace JsonTypeDefinition
 
         private static JsonTypeDefinitionSchema GetRefSchema(Type type, IDictionary<string, JsonTypeDefinitionSchema> definitions, bool isRoot)
         {
-            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public).AsEnumerable();
-
-            var optionalProperties = properties.Where(x => x.GetCustomAttribute<RequiredAttribute>() is null);
-            properties = properties.Except(optionalProperties);
-
-            var schema = new JsonTypeDefinitionSchema()
-            {
-                Properties = properties.Any()
-                    ? properties.ToDictionary(x => x.Name, x => GetJsonTypeDefinitionSchemaByType(x.PropertyType, definitions, false)) : null,
-                OptionalProperties = optionalProperties.Any()
-                    ? optionalProperties.ToDictionary(x => x.Name, x => GetJsonTypeDefinitionSchemaByType(x.PropertyType, definitions, false)) : null
-            };
-
-            if (isRoot)
-                return schema;
-
             var refName = type.Name;
-            // edge case: same simple type name but is actually a different type
-            if (definitions.TryGetValue(type.Name, out var definition) && definition != schema)
-                refName = type.FullName;
+            // we use the short type name here to avoid bloating the root schema with application info, i.e. namespaces
+            // when two different types use the same short name this will lead to unexpected behavior
+            if (isRoot || !definitions.ContainsKey(refName))
+            {
+                var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public).AsEnumerable();
+                var optionalProperties = properties.Where(x => x.GetCustomAttribute<RequiredAttribute>() is null);
+                properties = properties.Except(optionalProperties);
+                var schema = new JsonTypeDefinitionSchema()
+                {
+                    Properties = properties.Any()
+                        ? properties.ToDictionary(x => x.Name, x => GetJsonTypeDefinitionSchemaByType(x.PropertyType, definitions, false)) : null,
+                    OptionalProperties = optionalProperties.Any()
+                        ? optionalProperties.ToDictionary(x => x.Name, x => GetJsonTypeDefinitionSchemaByType(x.PropertyType, definitions, false)) : null
+                };
 
-            if (!string.IsNullOrEmpty(refName) && !definitions.ContainsKey(refName))
-                definitions[refName] = schema;
+                if (isRoot)
+                    return schema;
+                else
+                    definitions[refName] = schema;
+            }
             return new() { Ref = refName };
         }
     }
