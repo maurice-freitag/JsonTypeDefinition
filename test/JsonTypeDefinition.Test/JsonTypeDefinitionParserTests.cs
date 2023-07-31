@@ -1,9 +1,9 @@
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 using Xunit;
-using j = Jtd.Jtd;
+using J = Jtd.Jtd;
 
 namespace JsonTypeDefinition.Test
 {
@@ -14,7 +14,7 @@ namespace JsonTypeDefinition.Test
             var json = JsonConvert.SerializeObject(schema);
             var ex = Record.Exception(() =>
             {
-                var jSchema = JsonConvert.DeserializeObject<j.Schema>(json);
+                var jSchema = JsonConvert.DeserializeObject<J.Schema>(json);
                 jSchema.Verify();
             });
             Assert.Null(ex?.Message);
@@ -272,7 +272,7 @@ namespace JsonTypeDefinition.Test
             Assert.Throws<JsonTypeDefinitionParserException>(() => JsonTypeDefinitionParser.Parse<EnumWithDuplicateValues>());
         }
 
-        public class PropertySchemaType {[Required] public string RequiredProperty { get; set; } }
+        public class PropertySchemaType { [Required] public string RequiredProperty { get; set; } }
 
         [Fact]
         [Trait("Category", "Parse")]
@@ -468,7 +468,7 @@ namespace JsonTypeDefinition.Test
             Assert.Null(schema.OptionalProperties);
         }
 
-        public class OnlyRequiredPropertyType {[Required] public string Foo { get; set; } }
+        public class OnlyRequiredPropertyType { [Required] public string Foo { get; set; } }
 
         [Fact]
         [Trait("Category", "Parse")]
