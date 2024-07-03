@@ -121,6 +121,8 @@ namespace JsonTypeDefinition
 
         private static JsonTypeDefinitionSchema GetTypeSchema(Type type)
         {
+            //to map nullables to JTD types, get underlying
+            type = Nullable.GetUnderlyingType(type) ?? type;
             return new() { Type = typeMapping[type] };
         }
 
